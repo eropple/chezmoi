@@ -19,14 +19,13 @@ Do not copy a complete working machine blindly. Do not deploy every file under `
 | Additional cluster infrastructure | cert-manager, ExternalDNS; optionally observability and CloudNativePG operator | Installed as cluster resources; not separate host daemons |
 | Optional shared development services | MinIO S3, Zot registry, Temporal, Grafana/Prometheus/Loki/Tempo/Alloy, optional Infisical | Services consumed by projects; select according to need and capacity |
 | Discovery metadata | `devenv-meta` ConfigMap and derived Secrets | No running application; publishes contracts for selected services |
-| Optional host applications | OpenCode and ClaudeCodeUI | User systemd processes outside Kubernetes, optionally fronted by Kubernetes routing |
 | Project application workloads | Project images, deployments, workers, databases, secrets, namespaces, RBAC | Separate project lifecycle; **not installed by this bootstrap** |
 
 A healthy K3s node does not require MinIO, Temporal, a registry, observability, or Infisical. The complete reference development platform includes several of these for convenience. CloudNativePG installs an operator, not a database: consuming services create their own `Cluster` resources. Temporal includes its own PostgreSQL dependency but not your projects' workflow workers.
 
 The inspected repository contains infrastructure and shared-service manifests, not downstream project deployments. `k8s/dns-tls/manifests/90-hello.yaml` is a disposable ingress validation application, not a prerequisite. Its current production Let's Encrypt annotation should be changed to staging or an approved private issuer for testing.
 
-OpenCode and ClaudeCodeUI directories contain routing to host processes, not Kubernetes Deployments of those applications. They and Infisical are documented as not deployed on Zagreus. Infisical's actual manifests describe an **in-cluster** application backed by CNPG; the top-level document's grouping of it with host systemd applications is imprecise. Directory presence is not proof a service is running.
+Infisical is documented as not deployed on Zagreus. Its manifests describe an optional **in-cluster** application backed by CNPG, not a host systemd service. Directory presence is not proof a service is running.
 
 ## 2. Decisions and prerequisites before changing a machine
 
@@ -163,7 +162,6 @@ A registry does not build images. Choose and install an approved build/push tool
 
 Do not install these merely because their directories are present:
 
-- **OpenCode / ClaudeCodeUI:** require separately installed host binaries, credentials, user systemd units, an intentional bind address/port, and a decision about user lingering. Kubernetes selector-less Services plus manual Endpoints route to them. The copied manifests still contain an old Hermes wired IP; replace it only after confirming the actual host service and pod-to-host connectivity. Apply ingress only after authentication and network exposure have been reviewed.
 - **Infisical:** optional in-cluster application with a CNPG database, not a base K3s dependency. It has additional secret and encryption-key lifecycle requirements. Losing/changing the encryption key can make stored data unusable. Its reference DB request is another 10Gi.
 - **Project workloads:** install from their own reviewed repositories after infrastructure acceptance. Give each project appropriate namespaces, RBAC, secrets, quotas, PVCs, ingress/DNS ownership, and application-specific backup policy. Provision Temporal workers, S3 buckets/access policies, and database roles separately. Do not hand every project administrative kubeconfig or shared root credentials by default.
 
@@ -215,7 +213,7 @@ These findings were obtained from repository inspection, not live verification:
 2. **DNS instructions omit resources:** include the chosen local CA Secret and review `21-external-dns-rbac-patch.yaml`; feature instructions alone omit them. Wait for the webhook as well as pods.
 3. **Temporal feature instructions omit external gRPC:** include `30-grpc-ingress.yaml` if publishing that endpoint.
 4. **Registry metadata is inconsistent:** user guide/devenv-meta advertise `docker-registry.registry.svc.cluster.local:5000`, but the Ingress targets Service `zot` and no inspected manifest defines `docker-registry`. Verify rendered Services and correct metadata, rather than publishing the stale URL.
-5. **Optional applications are advertised but not established:** OpenCode/ClaudeCodeUI URLs appear in the user guide although top-level instructions mark them undeployed. Their Endpoints contain an old host IP. Infisical's manifests are in-cluster despite the top-level grouping.
+5. **Optional application presence is not deployment evidence:** Infisical has checked-in manifests but is documented as undeployed. Treat it as a separate operator-approved installation, not an available endpoint.
 6. **Chart sources need review:** Zot's checked-in chart repository uses HTTP; select a verified trusted distribution source before deployment. Loki docs warn of a chart repository migration while the manifest still uses the older URL. Do not assume either location/version remains valid.
 7. **Historical pins are not a compatibility guarantee:** inspected versions include cert-manager chart `v1.17.2`, ExternalDNS chart `1.20.0`, kube-prometheus-stack `82.10.3`, Loki `6.54.0`, Tempo `2.0.0`, Alloy `1.6.2`, CNPG chart `0.27.1`, Zot image `v2.1.15`, and Temporal chart `1.0.0-rc.2`. MinIO and the hello sample use `latest`. Distinguish chart versions from application versions and verify supported combinations.
 8. **Private access is intent, not demonstrated enforcement:** Tailscale CNAMEs do not prove firewall or listener isolation. Audit actual host/Kubernetes exposure before relying on an unauthenticated endpoint.
@@ -234,7 +232,7 @@ All local paths below are relative to the reference `~/system-admin/this-server/
 - `k8s/{minio,registry,temporal}/CLAUDE.md` and corresponding `manifests/`: optional shared-service deployment and persistence.
 - `k8s/temporal/manifests/30-grpc-ingress.yaml`: explicit DNS/certificate/gRPC routing pattern.
 - `k8s/devenv-meta/{CLAUDE.md,deploy.sh,manifests/20-configmap.yaml}`: derived credentials and endpoint publication.
-- `k8s/{opencode,claude-code-ui,infisical}/`: optional application patterns, not automatic installation scope.
+- `k8s/infisical/`: optional in-cluster application, not automatic installation scope.
 
 Official K3s references consulted for portable host guidance:
 
