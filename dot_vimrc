@@ -1,0 +1,65 @@
+" Standalone preferences; vim-plug and all plugins are optional.
+set nocompatible
+set autoindent
+set smartindent
+set tabstop=4
+set shiftwidth=4
+set expandtab
+set showmatch
+set ruler
+if exists('+guioptions')
+    set guioptions-=T
+endif
+set number
+set nobackup
+set nowritebackup
+set noswapfile
+
+set wildmode=longest,list,full
+set wildmenu
+
+if exists('+colorcolumn')
+    set colorcolumn=80
+endif
+
+filetype plugin on
+syntax on
+
+colorscheme desert
+if exists('+guifont')
+    set guifont=Consolas:h14
+endif
+
+behave mswin
+let g:vimwiki_list=[]
+
+" Mac key binds
+map <Esc>[F <End>
+map <Esc>[H <Home>
+map <Esc>[5~ <PageUp>
+map <Esc>[6~ <PageDown>
+
+" Airline needs this; useful without plugins too.
+set laststatus=2
+
+" Install vim-plug separately if desired; never bootstrap during startup.
+if filereadable(expand('~/.vim/autoload/plug.vim'))
+    execute 'source ' . fnameescape(expand('~/.vim/autoload/plug.vim'))
+    call plug#begin(expand('~/.vim/plugged'))
+
+    Plug 'scrooloose/nerdtree', { 'on': 'NERDTreeToggle' }
+    Plug 'myusuf3/numbers.vim'
+    Plug 'spf13/vim-colors'
+    Plug 'altercation/vim-colors-solarized'
+    Plug 'scrooloose/nerdcommenter'
+    Plug 'scrooloose/syntastic'
+    Plug 'tyru/open-browser.vim'
+    Plug 'mhinz/vim-signify'
+    Plug 'bling/vim-airline'
+
+    call plug#end()
+endif
+
+" Check at keypress time: plugins load after vimrc, and may be absent.
+nnoremap <silent> <F3> :if exists(':NumbersToggle') == 2 <Bar> NumbersToggle <Bar> endif<CR>
+nnoremap <silent> <F4> :if exists(':NumbersOnOff') == 2 <Bar> NumbersOnOff <Bar> endif<CR>

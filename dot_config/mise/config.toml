@@ -1,0 +1,6 @@
+[tools]
+direnv = "latest"
+fzf = "latest"
+starship = "latest"
+zellij = "latest"
+zoxide = "latest"

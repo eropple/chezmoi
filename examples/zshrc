@@ -1,0 +1,20 @@
+# EXAMPLE ONLY: ~/.zshrc is machine-local, not managed by chezmoi.
+# Merge into your existing file; do not overwrite local credential setup.
+
+# Machine-local settings needed before shared initialization:
+# export COLORTERM=truecolor
+# export PROMPT_HUE_OFFSET=60
+export EDITOR=vim
+export PATH="$HOME/bin:$HOME/.local/bin:$PATH"
+
+if [[ -r "$HOME/.config/zsh-ng/zshrc.zsh" ]]; then
+    source "$HOME/.config/zsh-ng/zshrc.zsh"
+fi
+
+if command -v direnv >/dev/null 2>&1; then
+    eval "$(direnv hook zsh)"
+fi
+
+# Machine-local additions and credential integration below.
+# Provision 1Password authentication separately. Never commit tokens or
+# resolved secret values, and do not copy this machine's credentials elsewhere.

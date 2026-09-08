@@ -1,0 +1,11 @@
+# Antidote plugin list
+# See: https://getantidote.github.io/
+
+# Fish-like autosuggestions from history
+zsh-users/zsh-autosuggestions
+
+# Syntax highlighting as you type
+zsh-users/zsh-syntax-highlighting
+
+# Replace tab completion with fzf fuzzy finder
+Aloxaf/fzf-tab

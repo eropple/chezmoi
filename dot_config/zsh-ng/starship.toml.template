@@ -1,0 +1,55 @@
+# Starship prompt configuration
+# Replicates the eropple.zsh-theme format: [user@hostname path (git)]$
+# NOTE: This is a template. Colors are substituted at shell startup.
+
+format = """
+[\\[](white)\
+$username\
+[@]({{SYMBOL_COLOR}})\
+$hostname\
+$directory\
+[\\]](white)\
+$character"""
+
+right_format = """$kubernetes$git_branch$git_status"""
+
+add_newline = false
+
+[username]
+format = "[$user]({{HOST_COLOR}})"
+show_always = true
+
+[hostname]
+format = "[$hostname]({{HOST_COLOR}}) "
+ssh_only = false
+
+[directory]
+style = "cyan"
+format = "[$path]($style)"
+truncation_length = 5
+truncate_to_repo = false
+
+[kubernetes]
+disabled = false
+format = '[⎈]({{SYMBOL_COLOR}}) [$context]({{HOST_COLOR}}) '
+
+[git_branch]
+format = '[$branch]({{HOST_COLOR}})'
+
+[git_status]
+style = "{{SYMBOL_COLOR}}"
+format = '[$all_status$ahead_behind]($style) '
+conflicted = "="
+ahead = " ⇡${count}"
+behind = " ⇣${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+untracked = "?"
+stashed = "\\$"
+modified = "✗"
+staged = "+"
+renamed = "»"
+deleted = "✘"
+
+[character]
+success_symbol = "[\\$]({{SYMBOL_COLOR}})"
+error_symbol = "[\\$](bold red)"

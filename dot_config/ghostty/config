@@ -1,0 +1,11 @@
+theme = iTerm2 Tango Dark
+font-family = IBM Plex Mono
+font-thicken = 1
+
+font-feature = "-calt,-liga,-dlig"
+
+keybind = shift+enter=text:\x1b\r
+
+shell-integration-features = true
+env = COLORTERM=truecolor
+

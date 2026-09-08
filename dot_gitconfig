@@ -1,0 +1,31 @@
+[user]
+	name = Ed Ropple
+	email = ed@edropple.com
+#	signingkey = EB919E9D0DABE107A540630A8B370F0B28D2952B
+[core]
+	trustctime = false
+	eol = lf
+	autocrlf = false
+[init]
+    defaultBranch = main
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+    required = true
+[fsck]
+	zeroPaddedFilemode = ignore
+[fetch "fsck"]
+	zeroPaddedFilemode = ignore
+[receive "fsck"]
+	zeroPaddedFilemode = ignore
+[commit]
+#    gpgsign = true
+
+[includeIf "gitdir:~/Development/Render/"]
+    path = ~/.gitconfig-render
+[lfs]
+	repositoryformatversion = 0
+[credential "https://github.com"]
+	helper = 
+	helper = !gh auth git-credential
