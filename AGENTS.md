@@ -15,7 +15,7 @@
 
 `dot_config/zsh-ng/` deploys to `~/.config/zsh-ng/`; `dot_vimrc` to `~/.vimrc`; `dot_gitconfig` to `~/.gitconfig`, and so on. `dot_config` also contains mise, Ghostty, and Zellij settings. `dot_tmux.conf` and `dot_editorconfig` are shared.
 
-`AGENTS.md`, `README.md`, and `examples/` are excluded from deployment by `.chezmoiignore`. `examples/zshrc` is an example to merge manually, never a managed target.
+`AGENTS.md`, `README.md`, `examples/`, and `knowledge-base/` are excluded from deployment by `.chezmoiignore`. `examples/zshrc` is an example to merge manually, never a managed target. `knowledge-base/` contains shared operational guides for consuming agents, not automatic provisioning: distinguish host services and cluster infrastructure from optional application workloads, confirm machine-specific prerequisites with the operator, and obtain approval before changing services or deploying resources.
 
 The Starship `starship.toml.template` is a literal runtime input, NOT a chezmoi `.tmpl` file. Shell startup generates Starship config and its color cache. Antidote generates `.zsh_plugins.zsh`. Do not add those outputs, downloaded plugins, Vim runtime distributions, histories, databases, backups, credentials, or tool binaries.
 

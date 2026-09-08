@@ -2,6 +2,8 @@ AGENTS.md
 README.md
 examples
 examples/**
+knowledge-base
+knowledge-base/**
 {{ range (default (list) (index . "polytokenLocalPaths")) }}
 .config/polytoken/{{ . }}
 {{ end }}
