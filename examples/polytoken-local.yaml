@@ -1,0 +1,9 @@
+# Copy to ~/.config/chezmoi/polytoken.local.yaml; keep that file private/unmanaged.
+# Deep-merged over shared config by chezmoi, not by Polytoken.
+# Maps merge recursively; local scalar/list values replace shared values.
+# Use false explicitly to override booleans. Do not use null as deletion syntax.
+tui:
+  sidebar:
+    width: 48
+# Provider auth and telemetry headers can be overridden here too.
+# Never copy this machine's secret values into the repository.

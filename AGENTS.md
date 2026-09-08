@@ -54,7 +54,11 @@ Recovery: restore affected files and symlinks from the pre-cutover backup and re
 
 ## Daily workflow and syncing
 
+Proactively synchronize shared source changes: inspect Git status and the remote, then run `git -C ~/.chezmoi pull --ff-only` before editing. Preserve existing uncommitted work; if the pull is blocked or histories diverge, stop and report rather than resetting, automatically stashing, or force-pushing. After making changes, review for secrets, run relevant checks, stage only intended source files, commit, and push without waiting for a separate reminder (unless the operator requests otherwise). Report the commit and push result; never claim remote sync succeeded if it failed. Git synchronization does not authorize deployment: preview and obtain approval before applying. Never use `chezmoi update` merely to synchronize source because it also applies.
+
 ```sh
+git -C ~/.chezmoi status --short --branch
+git -C ~/.chezmoi pull --ff-only
 chezmoi edit ~/.config/zsh-ng/config/aliases.zsh
 chezmoi diff
 chezmoi apply                 # after reviewing
@@ -77,6 +81,8 @@ On another machine, use `git -C ~/.chezmoi pull --ff-only`, then `chezmoi diff`,
 
 Prefer shared defaults plus supported local overrides. Shell-only local settings belong in unmanaged `.zshrc`; no separate branches per machine.
 
+`.gitconfig` is shared, including identity and general Git preferences. It includes optional `~/.gitconfig-auth` for machine-local authentication settings; Git ignores that include if the file is absent. Before first deployment, back up existing Git configuration and preserve its credential-helper settings in this unmanaged file, maintaining order and empty helper resets. Provision authentication separately on every machine. Never add `.gitconfig-auth`, credential storage, or tokens to the repository; do not introduce plaintext storage helpers on new machines. Existing helpers may be preserved only as an explicit machine-local choice. Machine-local mise tool declarations can live in `~/.config/mise/config.local.toml`, outside this source checkout.
+
 For templates, put non-secret per-machine values in local `~/.config/chezmoi/chezmoi.toml`:
 ```toml
 [data]
@@ -92,6 +98,23 @@ To deploy a file only on macOS, place it in source and add to `.chezmoiignore`:
 ```
 Ignore patterns use DESTINATION names, not `dot_` source names. Ignoring a formerly managed file does not automatically remove its existing deployed copy; review any cleanup explicitly. For host-specific files use an explicit local profile/flag where possible rather than accumulating hostname checks. Keep the file entirely unmanaged if it is truly local or sensitive.
 
+## Shared Polytoken configuration
+
+`dot_config/polytoken/` manages config, global `AGENTS.md`, and ordinary (non-exact) `themes`, `facets`, `subagents`, and `skills` directories. Source `.keep` markers preserve empty directories in Git without deploying dummy definitions. Additional unmanaged files survive apply; never recursively import this application's directory, histories, backups, sessions, or credentials.
+
+Edit shared configuration in `.chezmoitemplates/polytoken-config.yaml`, not the rendered target. The private `config.yaml` target is rendered by recursively merging optional unmanaged `~/.config/chezmoi/polytoken.local.yaml` over shared defaults. Local scalar/list values win, including `false`; maps merge recursively. Do not rely on null to delete keys. This is a chezmoi-time merge, not Polytoken runtime layering. A new machine without that file uses shared defaults. Shared telemetry resolves `op://Local Dev/Honeycomb/x-honeycomb-team` using chezmoi's `onepasswordRead` at render time; Polytoken receives a literal header without needing environment interpolation. The credential is never stored in Git or manually carried between machines. Install the 1Password CLI and supply an authorized session before preview/apply. For service-account bootstrap, export the separately provisioned `OP_SERVICE_ACCOUNT_TOKEN` and merge `[onepassword] mode = "service"` and `prompt = false` into local chezmoi config (never put the token there). The service account must be able to read the referenced vault/item. Rendering fails if it cannot resolve the secret; do not fall back to a committed key. Provider environment variables and device authentication also require per-machine provisioning. Never `chezmoi add` the rendered config: it may contain secrets. Diffs and backups can contain rendered secrets; keep them private.
+
+Shared global instructions live in `.chezmoitemplates/polytoken-AGENTS.md` (initially blank). Optional unmanaged `~/.config/chezmoi/polytoken-AGENTS.local.md` is appended during rendering. The managed destination is `~/.config/polytoken/AGENTS.md`, not `~/AGENTS.md`; the repository's own AGENTS.md remains deployment-excluded. Do not re-add rendered instructions if their local additions are private.
+
+For machine-local definition/theme additions, use distinct filenames in the ordinary destination directories and do not add them to source. To leave an otherwise shared file machine-local, configure destination-relative paths in local chezmoi config:
+
+```toml
+[data]
+polytokenLocalPaths = ["themes/work.yaml", "facets/work.md", "subagents/work.md", "skills/work/**"]
+```
+
+These paths are relative to `.config/polytoken/`; ignoring preserves the existing destination, it does not create an override or remove files. Configure exclusions before applying conflicting shared names. Use a unique name when possible. Directory names alone are not recursive exclusions: list their children/patterns deliberately. See `examples/polytoken-local.yaml` for a non-secret config override example. Review shared permission defaults (`bypass_plus`) before deploying to another machine. No Polytoken daemon restart or automatic definition/plugin download is part of deployment.
+
 ## SSH authorized keys
 
 `private_dot_ssh/private_authorized_keys` manages the complete `~/.ssh/authorized_keys` on EVERY machine, by explicit operator choice. The private attributes request directory mode 0700 and file mode 0600. The directory is not `exact_`: other SSH files are not managed or deleted by this entry. Never import private keys or the whole `.ssh` directory.
@@ -103,6 +126,8 @@ Adding or removing a shared key changes login access on every machine that subse
 During cutover, keep the current SSH session open and test a second connection before disconnecting. SSH daemon configuration, account policy, and other authorized-key sources can affect access; this repository does not configure them. On platforms with different SSH permission conventions, review applicability before applying.
 
 ## Secrets and privacy
+
+`private_dot_env.op` deploys `~/.env.op` with mode 0600. It contains only 1Password references, including `HONEYCOMB_API_KEY="op://Local Dev/Honeycomb/x-honeycomb-team"`, never resolved values. Keep reference identifiers private when sharing the repository. This file does not load itself: an approved local `.envrc`/shell integration must use `op run --env-file` (or equivalent) with the separately provisioned 1Password token/session. The Polytoken telemetry template resolves the same reference directly and does not depend on `.env.op` being loaded. Do not automatically execute the whole reference file during setup; some items may be unavailable to a given machine's service account. Machine-local shell credential loading remains unmanaged.
 
 Private Git repositories are not secret stores. Never commit tokens, private keys, kubeconfigs, Git credential-store files, resolved `.env` files, or 1Password output. Audit secret-reference templates before sharing too: identifiers and vault paths can be private metadata. Do not automatically migrate the original plaintext Git `store` helper behavior. Configure an appropriate credential helper per machine. Git identity and work paths are personal metadata and must be reviewed before making the repository public.
 

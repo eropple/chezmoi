@@ -1,0 +1,5 @@
+{{- includeTemplate "polytoken-AGENTS.md" . -}}
+{{- $localPath := joinPath .chezmoi.homeDir ".config/chezmoi/polytoken-AGENTS.local.md" -}}
+{{- if stat $localPath }}
+{{ include $localPath }}
+{{- end -}}

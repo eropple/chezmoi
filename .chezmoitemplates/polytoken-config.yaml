@@ -1,0 +1,110 @@
+version: 3
+defaults:
+  full: zai/glm-5.3(high)
+  mini: codex/gpt-5.6-luna(xhigh)
+providers:
+  codex:
+    kind:
+      type: catalog
+      name: codex
+    auth:
+      type: codex_device
+      profile: codex
+  zai:
+    kind:
+      type: catalog
+      name: zai
+    auth:
+      type: static_key
+      key: ${ZAI_API_KEY}
+  google-ai:
+    kind:
+      type: catalog
+      name: google-ai
+    auth:
+      type: static_key
+      key: ${GEMINI_API_KEY}
+  deepseek:
+    kind:
+      type: catalog
+      name: deepseek
+    auth:
+      type: static_key
+      key: ${DEEPSEEK_API_KEY}
+  deepinfra:
+    kind:
+      type: catalog
+      name: deepinfra
+    auth:
+      type: static_key
+      key: ${DEEPINFRA_API_KEY}
+  ocgo-c:
+    kind:
+      type: catalog
+      name: ocgo-c
+    auth:
+      type: static_key
+      key: ${OPENCODE_GO_API_KEY}
+  qwencloud:
+    kind:
+      type: catalog
+      name: qwencloud
+    auth:
+      type: static_key
+      key: ${QWENCLOUD_API_KEY}
+  mistral:
+    kind:
+      type: catalog
+      name: mistral
+    auth:
+      type: static_key
+      key: ${MISTRAL_API_KEY}
+models:
+  codex/gpt-5.5:
+    max_tool_batch_size: 6
+active_session:
+  default_facet: plan
+default_permission_matcher: bypass_plus
+autonomous_permission_matcher:
+  max_consecutive_denials: 3
+daemon:
+  log_level: debug
+  max_tool_turns: 400
+  goal_driver:
+    plan_handoff_activate_goal: false
+    agent_goal_auto_accept: false
+    max_continuations_per_goal: 50
+integrations:
+  search:
+    providers:
+      brave:
+        enabled: true
+        key: ${BRAVE_SEARCH_API_KEY}
+      tavily:
+        enabled: true
+        key: ${TAVILY_API_KEY}
+      exa:
+        enabled: true
+        key: ${EXA_API_KEY}
+      kagi:
+        enabled: false
+        key: ''
+tui:
+  theme: dark
+  theme-file: polytoken://themes/boringcyberpunk.yaml
+  alt-screen: auto
+  confirm-quit: false
+  density: standard
+  show-all-thinking-blocks: false
+  show-system-reminders: true
+  sidebar:
+    side: right
+    default-state: open
+    collapse-threshold: 100
+    width: 40
+telemetry:
+  headers:
+    x-honeycomb-team: {{ onepasswordRead "op://Local Dev/Honeycomb/x-honeycomb-team" | quote }}
+  protocol: http/protobuf
+  endpoint: https://api.honeycomb.io
+  service_name: polytoken

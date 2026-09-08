@@ -1,0 +1,7 @@
+{{- $shared := includeTemplate "polytoken-config.yaml" . | fromYaml -}}
+{{- $localPath := joinPath .chezmoi.homeDir ".config/chezmoi/polytoken.local.yaml" -}}
+{{- $local := dict -}}
+{{- if stat $localPath -}}
+{{- $local = include $localPath | fromYaml -}}
+{{- end -}}
+{{- mustMergeOverwrite $shared $local | toYaml -}}

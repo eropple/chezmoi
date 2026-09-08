@@ -1,0 +1,25 @@
+# 1Password secret references for direnv.
+# Loaded by .envrc via `op run --env-file` only when OP_CACHE or
+# OP_SERVICE_ACCOUNT_TOKEN is already present in the environment.
+
+SENTRY_AUTH_TOKEN="op://Local Dev/sentry.io/apikey"
+POLYTOKEN_MACOS_DEVID_P12_PASSWORD="op://Local Dev/Polytoken Apple Signing Key/p12_password"
+
+LITELLM_API_KEY="op://Local Dev/ed3d LiteLLM/password"
+MIMO_API_KEY="op://Local Dev/Xiaomi Mimo/apikey"
+MINIMAX_API_KEY="op://Local Dev/MiniMax/apikey"
+ZAI_API_KEY="op://Local Dev/z.ai/apikey"
+GEMINI_API_KEY="op://Local Dev/Google AI Studio API Key/apikey"
+OPENCODE_GO_API_KEY="op://Local Dev/Opencode/apikey"
+DEEPSEEK_API_KEY="op://Local Dev/DeepSeek/apikey"
+BRAVE_SEARCH_API_KEY="op://Local Dev/Brave/apikey"
+TAVILY_API_KEY="op://Local Dev/app.tavily.com/APIKey"
+EXA_API_KEY="op://Local Dev/Exa/apikey"
+UMANS_API_KEY="op://Local Dev/Umans/apikey"
+NEURALWATT_API_KEY="op://Local Dev/Neuralwatt/apikey"
+KIMI_CODE_API_KEY="op://Local Dev/Kimi/apikey"
+DEEPINFRA_API_KEY="op://Local Dev/DeepInfra/apikey"
+QWENCLOUD_API_KEY="op://Local Dev/Alibabacloud/qwencloud_apikey"
+MISTRAL_API_KEY="op://Local Dev/Mistral/apikey_vibe"
+OLLAMA_API_KEY="op://Local Dev/Ollama/apikey"
+HONEYCOMB_API_KEY="op://Local Dev/Honeycomb/x-honeycomb-team"
