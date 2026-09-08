@@ -6,6 +6,7 @@
 - Git distributes source; chezmoi deploys files. Pushing does not update other machines automatically.
 - `~/.zshrc` is deliberately UNMANAGED. It loads deployed `~/.config/zsh-ng/zshrc.zsh`, not the checkout. Preserve local settings and credential integration when editing it.
 - Stage and review first. Never run apply, installation scripts, or overwrite existing files without the operator's approval. Back up affected live files AND symlink targets before cutover.
+- Store ALL migration/cutover backups under `~/.chezmoi-backups/`, never directly in the home directory or inside the source checkout. Create the backup root with mode 0700 and use a unique private subdirectory per operation (for example, `mktemp -d "$HOME/.chezmoi-backups/cutover-XXXXXXXX"`). Preserve symlink definitions and target contents separately, verify copied contents before applying, and record the backup path in the completion report. Backups can contain secrets: never commit them, and delete them only with operator approval.
 - On the original machine, do not read anything beneath `.local` without new explicit permission. References to paths there are not permission to inspect their contents. Never source the live `.zshrc` during investigation: it loads secrets.
 - Leave the old `~/dotfiles-ng` intact during migration. Legacy `zsh` and Zed are excluded.
 - No automatic install hooks or external downloads are configured. Tool installation is separate and explicit.
