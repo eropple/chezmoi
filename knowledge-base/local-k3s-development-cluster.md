@@ -96,6 +96,8 @@ The reference registry also documents `fs.inotify.max_user_instances >= 1024`, p
 
 ### Secret handling
 
+The canonical shared Cloudflare ciphertext lives at `~/.chezmoi/secrets/cloudflare-api-token.sops.yaml`, outside the infrastructure checkout. Pull chezmoi source before consuming it. The entire `secrets/` directory is excluded from chezmoi deployment: this is a standard pattern for shared encrypted assets, not an automatically installed Secret. See [shared encrypted assets](../secrets/README.md) for key acquisition, creation policy and rotation. Cluster-specific passwords and CA keypairs remain in the infrastructure repository.
+
 The reference `.envrc` retrieves `SOPS_AGE_KEY` from the 1Password item `op://Local Dev/ed3dnet ed3d.net localdev age key/password` and selects kubeconfig. Inspect it before `direnv allow`; it executes code and makes an external secret lookup. A separately provisioned authorized 1Password session/token must already be available. Do not source the live `.zshrc` or read token files as a shortcut.
 
 `.sops.yaml` encrypts `data` and `stringData` in `k8s/**/*.sops.yaml`; metadata remains readable. For a new peer, generate fresh cluster application credentials, encrypt before committing, and preserve expected Secret names/keys. The reference age key is shared between peers for encryption-at-rest only. Sharing an encryption key does not synchronize databases or make application passwords interchangeable.

@@ -4,6 +4,8 @@ examples
 examples/**
 knowledge-base
 knowledge-base/**
+secrets
+secrets/**
 {{ range (default (list) (index . "polytokenLocalPaths")) }}
 .config/polytoken/{{ . }}
 {{ end }}
