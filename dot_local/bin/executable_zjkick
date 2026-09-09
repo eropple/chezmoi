@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# zj-kick: kill the smallest zellij client(s) attached to the current session.
+# Useful when a phone or small terminal is constraining your layout.
+#
+# Usage:
+#   zj-kick          # kill the single smallest client
+#   zj-kick --all    # kill all clients smaller than the largest
+
+set -euo pipefail
+
+kick_all=false
+[[ "${1:-}" == "--all" ]] && kick_all=true
+
+# Collect attached zellij client PIDs and their terminal areas.
+declare -A client_areas
+while read -r pid; do
+  size=$(stty -F "/proc/$pid/fd/0" size 2>/dev/null) || continue
+  rows=${size%% *}
+  cols=${size##* }
+  (( rows > 0 && cols > 0 )) || continue
+  client_areas[$pid]=$(( rows * cols ))
+done < <(ps -eo pid,args | grep '[z]ellij attach' | awk '{print $1}')
+
+if (( ${#client_areas[@]} < 2 )); then
+  echo "only one client attached — nothing to kick"
+  exit 0
+fi
+
+# Find the largest area.
+largest_area=0
+for area in "${client_areas[@]}"; do
+  (( area > largest_area )) && largest_area=$area
+done
+
+# Build kill list.
+killed=0
+for pid in "${!client_areas[@]}"; do
+  area=${client_areas[$pid]}
+  if (( area == largest_area )); then
+    continue
+  fi
+
+  rows=$(stty -F "/proc/$pid/fd/0" size 2>/dev/null | awk '{print $1}')
+  cols=$(stty -F "/proc/$pid/fd/0" size 2>/dev/null | awk '{print $2}')
+  echo "killing client PID $pid (${rows}×${cols})"
+  kill "$pid"
+  (( ++killed ))
+
+  $kick_all || break
+done
+
+if (( killed == 0 )); then
+  echo "all clients are the same size — nothing to kick"
+fi

@@ -6,6 +6,9 @@ knowledge-base
 knowledge-base/**
 secrets
 secrets/**
+{{ if ne .chezmoi.os "linux" }}
+.local/bin/zjkick
+{{ end }}
 {{ range (default (list) (index . "polytokenLocalPaths")) }}
 .config/polytoken/{{ . }}
 {{ end }}

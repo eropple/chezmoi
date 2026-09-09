@@ -78,6 +78,10 @@ On another machine, use `git -C ~/.chezmoi pull --ff-only`, then `chezmoi diff`,
 3. Use chezmoi naming (`dot_`, `private_`, `executable_`, `.tmpl`) deliberately. `private_` controls destination permissions, NOT encryption or Git secrecy.
 4. Test the affected target and stage only intended source paths. Never use `chezmoi add ~/.zshrc`.
 
+## Shared helper scripts
+
+`dot_local/bin/executable_zjkick` deploys executable `~/.local/bin/zjkick` on Linux only. It requires Bash with associative arrays, Linux `/proc`, GNU `stty -F`, `ps`, `grep`, and `awk`. It was imported unchanged; its comments overstate session isolation and smallest-client selection: it scans all matching `zellij attach` processes and, by default, terminates an arbitrary client smaller than the largest observed client. `--all` terminates all smaller matches. Do not execute it as a verification step or assume it is restricted to the current session. Adding this specific script does not authorize recursive imports or inspection of `.local`.
+
 ## Machine-specific settings and files
 
 Prefer shared defaults plus supported local overrides. Shell-only local settings belong in unmanaged `.zshrc`; no separate branches per machine.
