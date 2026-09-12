@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Bootstrap a Linux machine for this dotfiles repository.
 #
-# Installs chezmoi and the 1Password CLI when missing, verifies GitHub's SSH
-# host key, clones or fast-forward-updates ~/.chezmoi, writes the local chezmoi
-# config, and then APPLIES the dotfiles. Existing managed targets (including
-# symlink targets) are backed up under ~/.chezmoi-backups before anything is
-# overwritten. On a machine with no ~/.zshrc, one is created from
-# examples/zshrc; it stays unmanaged. Idempotent: safe to re-run.
+# Installs chezmoi, the 1Password CLI, and mise (all checksum-verified) when
+# missing, verifies GitHub's SSH host key, clones or fast-forward-updates
+# ~/.chezmoi, writes the local chezmoi config, applies the dotfiles, and runs
+# "mise install" for the declared shell tools (starship, zoxide, fzf, direnv,
+# zellij). Any failed step is reported loudly and the script exits non-zero.
+# Existing managed targets (including symlink targets) are backed up under
+# ~/.chezmoi-backups before anything is overwritten. On a machine with no
+# ~/.zshrc, one is created from examples/zshrc; it stays unmanaged.
+# Idempotent: safe to re-run.
 #
 # This script does NOT install shells, mise, antidote, vim-plug, fonts, or any
 # other tooling; see AGENTS.md for those steps. Read AGENTS.md before running
@@ -21,12 +24,15 @@
 #                  The token itself is never written to any file.
 #   --no-apply     stop after cloning and config; do not apply dotfiles.
 #
-# Environment overrides: CHEZMOI_VERSION (pinned default below), BIN_DIR,
-# SOURCE_DIR.
+# Environment overrides: CHEZMOI_VERSION, MISE_VERSION, BIN_DIR, SOURCE_DIR.
 
 set -euo pipefail
 
 CHEZMOI_VERSION="${CHEZMOI_VERSION:-v2.72.1}"
+MISE_VERSION="${MISE_VERSION:-v2026.9.5}"
+# SHA-256 digests from the GitHub release API at pin time; bump deliberately.
+MISE_SHA256_X64="d71e94e1ed59d4d0ca4ac847fa321d6d6615a8e613e9b468c9fb39f0dddd06d5"
+MISE_SHA256_ARM64="3a52c7c7c58d21a0791516950ebf4bc915f403277b49c93d657fc585259625ec"
 BIN_DIR="${BIN_DIR:-$HOME/.local/bin}"
 SOURCE_DIR="${SOURCE_DIR:-$HOME/.chezmoi}"
 REPO_URL="git@github.com:eropple/chezmoi.git"
@@ -43,6 +49,12 @@ trap 'rm -rf "$WORKDIR"' EXIT
 note() { printf '==> %s\n' "$*"; }
 warn() { printf 'WARNING: %s\n' "$*" >&2; }
 die() { printf 'bootstrap: %s\n' "$*" >&2; exit 1; }
+
+FAILURES=0
+record_failure() {
+  FAILURES=$((FAILURES + 1))
+  warn "FAILURE ${FAILURES}: $*"
+}
 
 backup_file() {
   local dir="$BACKUP_ROOT/bootstrap-$(date +%Y%m%d-%H%M%S)"
@@ -107,7 +119,7 @@ install_op() {
   if ! command -v apt-get >/dev/null 2>&1; then
     warn "no apt-get on this system; install the 1Password CLI manually:"
     warn "  https://developer.1password.com/docs/cli/get-started/"
-    warn "chezmoi operations that resolve 1Password secrets will fail without it."
+    record_failure "1Password CLI not installed (no apt on this system); 1Password-backed templates will fail"
     return
   fi
   command -v sudo >/dev/null 2>&1 \
@@ -135,6 +147,54 @@ install_op() {
   sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y 1password-cli
   command -v op >/dev/null 2>&1 || die "1Password CLI install did not produce op on PATH"
   note "installed 1Password CLI $(op --version)"
+}
+
+install_mise() {
+  if command -v mise >/dev/null 2>&1; then
+    MISE_BIN="$(command -v mise)"
+    note "mise found: $MISE_BIN"
+    return
+  fi
+  if [ -x "$BIN_DIR/mise" ]; then
+    MISE_BIN="$BIN_DIR/mise"
+    note "mise found: $MISE_BIN"
+    return
+  fi
+  if ldd --version 2>&1 | grep -q musl; then
+    record_failure "musl host: set MISE_VERSION/MISE_SHA256_* to a musl asset or install mise manually"
+    return
+  fi
+  local arch digest asset
+  case "$(uname -m)" in
+    x86_64) arch=x64; digest="$MISE_SHA256_X64" ;;
+    aarch64|arm64) arch=arm64; digest="$MISE_SHA256_ARM64" ;;
+    *) record_failure "unsupported architecture for mise: $(uname -m)"; return ;;
+  esac
+  asset="mise-${MISE_VERSION}-linux-${arch}.tar.gz"
+  note "installing mise $MISE_VERSION into $BIN_DIR"
+  curl -fsSL "https://github.com/jdx/mise/releases/download/${MISE_VERSION}/${asset}" \
+    -o "$WORKDIR/$asset"
+  printf '%s  %s\n' "$digest" "$asset" | (cd "$WORKDIR" && sha256sum -c -) \
+    || { record_failure "mise archive checksum mismatch for $asset"; return; }
+  tar -xzf "$WORKDIR/$asset" -C "$WORKDIR"
+  if [ ! -x "$WORKDIR/mise/bin/mise" ]; then
+    record_failure "mise binary not found in archive $asset"
+    return
+  fi
+  mkdir -p "$BIN_DIR"
+  install -m 0755 "$WORKDIR/mise/bin/mise" "$BIN_DIR/mise"
+  MISE_BIN="$BIN_DIR/mise"
+  note "installed $($MISE_BIN --version)"
+}
+
+run_mise_install() {
+  [ -n "${MISE_BIN:-}" ] || { record_failure "mise unavailable; declared tools (starship, zoxide, fzf, direnv, zellij) not installed"; return; }
+  note "running mise install for declared tools (starship, zoxide, fzf, direnv, zellij)"
+  if "$MISE_BIN" install; then
+    "$MISE_BIN" ls
+  else
+    record_failure "mise install failed; shell tools (starship, zoxide, fzf, direnv, zellij) are missing"
+  fi
 }
 
 github_host_key() {
@@ -260,8 +320,8 @@ apply_dotfiles() {
   if "$CHEZMOI_BIN" apply --force --keep-going; then
     note "dotfiles applied"
   else
-    warn "chezmoi apply reported errors (commonly 1Password templates without auth)."
-    warn "Authenticate op, then re-run bootstrap or: $CHEZMOI_BIN apply --force"
+    record_failure "chezmoi apply reported errors (commonly 1Password templates without auth)"
+    warn "Authenticate op (op signin, or ensure ~/.local/1password_token exists), then re-run bootstrap."
   fi
 }
 
@@ -276,7 +336,7 @@ seed_zshrc() {
 }
 
 usage() {
-  sed -n '2,23p' "$0"
+  sed -n '2,27p' "$0"
 }
 
 APPLY=true
@@ -297,6 +357,7 @@ done
 
 install_chezmoi
 install_op
+install_mise
 github_host_key
 check_github_auth
 sync_source
@@ -305,13 +366,13 @@ write_config
 if [ "$APPLY" = true ]; then
   apply_dotfiles
   seed_zshrc
+  run_mise_install
 fi
 
 cat <<EOF
 
 Bootstrap complete. Not yet installed by this script (see AGENTS.md):
 
-  - mise: install per its official instructions, then run "mise install"
   - zsh plugins (antidote) and Vim plugins (vim-plug) are optional and separate
   - Ghostty's configured font (IBM Plex Mono) must be installed separately
 
@@ -322,5 +383,13 @@ token: keep it at ~/.local/1password_token (mode 600); the shared shell
 config exports it as OP_SERVICE_ACCOUNT_TOKEN automatically.
 Applying replaces ~/.ssh/authorized_keys
 with the shared list; any pre-existing copy was backed up under $BACKUP_ROOT/.
-Start a new zsh to pick everything up. Re-running bootstrap is safe.
+Start a new zsh to pick everything up (including the Starship prompt).
+Re-running bootstrap is safe.
 EOF
+
+if [ "$FAILURES" -gt 0 ]; then
+  echo "" >&2
+  warn "BOOTSTRAP FINISHED WITH $FAILURES FAILURE(S) LISTED ABOVE; exit code is 1."
+  warn "Fix them (often: authenticate op or provision ~/.local/1password_token), then re-run."
+  exit 1
+fi
