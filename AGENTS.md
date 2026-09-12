@@ -15,11 +15,13 @@
 
 `dot_config/zsh-ng/` deploys to `~/.config/zsh-ng/`; `dot_vimrc` to `~/.vimrc`; `dot_gitconfig` to `~/.gitconfig`, and so on. `dot_config` also contains mise, Ghostty, and Zellij settings. `dot_tmux.conf` and `dot_editorconfig` are shared.
 
-`AGENTS.md`, `README.md`, `examples/`, and `knowledge-base/` are excluded from deployment by `.chezmoiignore`. `examples/zshrc` is an example to merge manually, never a managed target. `knowledge-base/` contains shared operational guides for consuming agents, not automatic provisioning: distinguish host services and cluster infrastructure from optional application workloads, confirm machine-specific prerequisites with the operator, and obtain approval before changing services or deploying resources.
+`AGENTS.md`, `README.md`, `bootstrap.sh`, `examples/`, and `knowledge-base/` are excluded from deployment by `.chezmoiignore`. `examples/zshrc` is an example to merge manually, never a managed target. `knowledge-base/` contains shared operational guides for consuming agents, not automatic provisioning: distinguish host services and cluster infrastructure from optional application workloads, confirm machine-specific prerequisites with the operator, and obtain approval before changing services or deploying resources.
 
 The Starship `starship.toml.template` is a literal runtime input, NOT a chezmoi `.tmpl` file. Shell startup generates Starship config and its color cache. Antidote generates `.zsh_plugins.zsh`. Do not add those outputs, downloaded plugins, Vim runtime distributions, histories, databases, backups, credentials, or tool binaries.
 
 ## New machine: from download to working setup
+
+`bootstrap.sh` at the repository root (deployment-excluded) automates the Linux prerequisites: it installs chezmoi and the 1Password CLI when missing, verifies GitHub's Ed25519 host key against `api.github.com/meta`, clones or fast-forward-updates `~/.chezmoi` over SSH, and creates or merges the local chezmoi config. Pass `--op-service` to add the `[onepassword]` service block. It is idempotent, never applies dotfiles, and aborts on unexpected existing state. Review it before running; the steps below still cover everything it does not do.
 
 1. Install Git, chezmoi, Zsh, Vim, and curl using a trusted method appropriate to the OS. Set up GitHub SSH authentication and verify GitHub's host key. Never disable host-key checking. A clone alone does not install or activate configuration.
 2. Clone if not already downloaded:
