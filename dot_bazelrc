@@ -1,0 +1,8 @@
+# Shared Bazel defaults, deposited by chezmoi on every machine.
+# Cap locally executing build actions at half the machine's logical CPU cores.
+# HOST_CPUS is Bazel's detected logical core count, so this adapts per machine.
+# Uses the current unified assignment form (Bazel 9); the older dedicated
+# --local_cpu_resources spelling was removed in Bazel 9.
+# A workspace .bazelrc or the command line still overrides this per project.
+# Remote-execution users on current Bazel may also want: --jobs=HOST_CPUS*.5
+build --local_resources=cpu=HOST_CPUS*.5
