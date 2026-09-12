@@ -12,6 +12,17 @@ if [[ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" && -r "$HOME/.local/1password_token" ]]
     unset ZSH_NG_OP_TOKEN
 fi
 
+# 1Password-backed environment: resolve ~/.env.op (op:// references) via the
+# authorized 1Password CLI and export the results. Skips silently when op is
+# missing, unauthorized, or the file is absent; opt out with ZSH_NG_NO_OP_ENV=1.
+export OP_CACHE=true
+if [[ -z "${ZSH_NG_NO_OP_ENV:-}" && -r "$HOME/.env.op" ]] \
+   && command -v op &>/dev/null && op whoami &>/dev/null; then
+    set -a
+    source <(op inject -i "$HOME/.env.op" 2>/dev/null)
+    set +a
+fi
+
 # Ensure mise-installed tools are discoverable before activation
 export PATH="$HOME/.local/bin:$PATH"
 
