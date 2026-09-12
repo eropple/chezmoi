@@ -2,19 +2,24 @@
 # Bootstrap a Linux machine for this dotfiles repository.
 #
 # Installs chezmoi and the 1Password CLI when missing, verifies GitHub's SSH
-# host key, clones or fast-forward-updates ~/.chezmoi, and creates or merges
-# the local chezmoi config. Idempotent: safe to re-run.
+# host key, clones or fast-forward-updates ~/.chezmoi, writes the local chezmoi
+# config, and then APPLIES the dotfiles. Existing managed targets (including
+# symlink targets) are backed up under ~/.chezmoi-backups before anything is
+# overwritten. On a machine with no ~/.zshrc, one is created from
+# examples/zshrc; it stays unmanaged. Idempotent: safe to re-run.
 #
-# This script does NOT apply dotfiles, install shells/editors/mise, provision
-# secrets, or modify ~/.zshrc. Read AGENTS.md before applying anything.
+# This script does NOT install shells, mise, antidote, vim-plug, fonts, or any
+# other tooling; see AGENTS.md for those steps. Read AGENTS.md before running
+# this anywhere except a fresh machine.
 #
 # Usage:
-#   ./bootstrap.sh [--op-service]
+#   ./bootstrap.sh [--op-service] [--no-apply]
 #
 #   --op-service   also merge "[onepassword]" mode="service" prompt=false into
 #                  the local chezmoi config. The OP_SERVICE_ACCOUNT_TOKEN
 #                  itself must come from the environment at run time; it is
 #                  never written to any file.
+#   --no-apply     stop after cloning and config; do not apply dotfiles.
 #
 # Environment overrides: CHEZMOI_VERSION (pinned default below), BIN_DIR,
 # SOURCE_DIR.
@@ -47,19 +52,26 @@ backup_file() {
   note "backed up $1 to $dir/"
 }
 
-install_chezmoi() {
+resolve_chezmoi() {
   if command -v chezmoi >/dev/null 2>&1; then
-    note "chezmoi found: $(command -v chezmoi)"
+    CHEZMOI_BIN="$(command -v chezmoi)"
     return
   fi
   local candidate
   for candidate in "$BIN_DIR/chezmoi" "$HOME/bin/chezmoi"; do
     if [ -x "$candidate" ]; then
-      note "chezmoi found: $candidate (not on PATH; add it if needed)"
+      CHEZMOI_BIN="$candidate"
       return
     fi
   done
+  return 1
+}
 
+install_chezmoi() {
+  if resolve_chezmoi; then
+    note "chezmoi found: $CHEZMOI_BIN"
+    return
+  fi
   note "installing chezmoi $CHEZMOI_VERSION into $BIN_DIR"
   local arch libc ver asset base line
   case "$(uname -m)" in
@@ -79,7 +91,8 @@ install_chezmoi() {
   tar -xzf "$WORKDIR/$asset" -C "$WORKDIR"
   mkdir -p "$BIN_DIR"
   install -m 0755 "$WORKDIR/chezmoi" "$BIN_DIR/chezmoi"
-  note "installed $($BIN_DIR/chezmoi --version)"
+  CHEZMOI_BIN="$BIN_DIR/chezmoi"
+  note "installed $($CHEZMOI_BIN --version)"
   case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
     *) note "add $BIN_DIR to PATH to use chezmoi in this shell" ;;
@@ -209,14 +222,63 @@ write_config() {
   fi
 }
 
-usage() {
-  sed -n '2,20p' "$0"
+apply_dotfiles() {
+  resolve_chezmoi || die "chezmoi binary not found"
+  local backup_dir="$BACKUP_ROOT/pre-apply-$(date +%Y%m%d-%H%M%S)"
+  local target dest
+  while IFS= read -r target; do
+    dest="$HOME/$target"
+    if [ -f "$dest" ] || [ -L "$dest" ]; then
+      mkdir -p "$backup_dir/$(dirname "$target")"
+      if [ -L "$dest" ]; then
+        printf 'symlink -> %s\n' "$(readlink "$dest")" > "$backup_dir/$target.linkinfo"
+        cp -aL "$dest" "$backup_dir/$target" 2>/dev/null || true
+      else
+        cp -a "$dest" "$backup_dir/$target"
+      fi
+    fi
+  done < <("$CHEZMOI_BIN" managed)
+  if [ -d "$backup_dir" ]; then
+    chmod 700 "$BACKUP_ROOT"
+    chmod -R go-rwx "$backup_dir"
+    note "backed up existing managed targets under $backup_dir"
+  else
+    note "no existing managed targets to back up (fresh machine)"
+  fi
+  if command -v op >/dev/null 2>&1 && ! op whoami >/dev/null 2>&1; then
+    warn "1Password CLI is installed but not authenticated."
+    warn "Templates that resolve 1Password secrets will fail until you authenticate"
+    warn "(op signin, or export OP_SERVICE_ACCOUNT_TOKEN). Other targets still apply."
+  fi
+  note "applying dotfiles to $HOME"
+  if "$CHEZMOI_BIN" apply --force --keep-going; then
+    note "dotfiles applied"
+  else
+    warn "chezmoi apply reported errors (commonly 1Password templates without auth)."
+    warn "Authenticate op, then re-run bootstrap or: $CHEZMOI_BIN apply --force"
+  fi
 }
 
+seed_zshrc() {
+  if [ -e "$HOME/.zshrc" ] || [ -L "$HOME/.zshrc" ]; then
+    note "~/.zshrc already exists; merge examples/zshrc into it manually (it stays unmanaged)"
+    return
+  fi
+  [ -f "$SOURCE_DIR/examples/zshrc" ] || return
+  install -m 0644 "$SOURCE_DIR/examples/zshrc" "$HOME/.zshrc"
+  note "created ~/.zshrc from examples/zshrc (unmanaged; machine-local additions go there)"
+}
+
+usage() {
+  sed -n '2,23p' "$0"
+}
+
+APPLY=true
 OP_SERVICE=false
 for arg in "$@"; do
   case "$arg" in
     --op-service) OP_SERVICE=true ;;
+    --no-apply) APPLY=false ;;
     -h|--help) usage; exit 0 ;;
     *) die "unknown option: $arg (see --help)" ;;
   esac
@@ -234,17 +296,22 @@ check_github_auth
 sync_source
 write_config
 
+if [ "$APPLY" = true ]; then
+  apply_dotfiles
+  seed_zshrc
+fi
+
 cat <<EOF
 
-Bootstrap complete. Next steps (see AGENTS.md for the full checklist):
+Bootstrap complete. Not yet installed by this script (see AGENTS.md):
 
-  cd "$SOURCE_DIR"
-  chezmoi doctor
-  chezmoi managed
-  chezmoi diff        # renders 1Password-backed templates; needs an authorized
-                      # op session or OP_SERVICE_ACCOUNT_TOKEN in the environment
+  - mise: install per its official instructions, then run "mise install"
+  - zsh plugins (antidote) and Vim plugins (vim-plug) are optional and separate
+  - Ghostty's configured font (IBM Plex Mono) must be installed separately
 
-Applying dotfiles requires your explicit review and approval; this script never
-runs chezmoi apply. Merging examples/zshrc into ~/.zshrc stays manual, and
-migration backups belong under $BACKUP_ROOT/.
+Machine-local overrides (never committed): shell additions in ~/.zshrc,
+Polytoken model/telemetry in ~/.config/chezmoi/polytoken.local.yaml,
+Git credentials in ~/.gitconfig-auth. Applying replaces ~/.ssh/authorized_keys
+with the shared list; any pre-existing copy was backed up under $BACKUP_ROOT/.
+Start a new zsh to pick everything up. Re-running bootstrap is safe.
 EOF
