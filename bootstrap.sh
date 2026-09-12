@@ -29,7 +29,7 @@ KNOWN_HOSTS="$HOME/.chezmoi-github-known-hosts"
 CONFIG_FILE="$HOME/.config/chezmoi/chezmoi.toml"
 BACKUP_ROOT="$HOME/.chezmoi-backups"
 # Pinned from https://api.github.com/meta (Ed25519).
-GITHUB_ED25519="AAAAC2NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdGc4XCkANwpdsP95PJTeBvtO3fO8jHv"
+GITHUB_ED25519="AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl"
 GITHUB_FINGERPRINT="SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU"
 GIT_SSH="ssh -o UserKnownHostsFile=$KNOWN_HOSTS -o StrictHostKeyChecking=yes"
 WORKDIR="$(mktemp -d)"
