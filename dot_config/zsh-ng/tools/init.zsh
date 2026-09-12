@@ -1,6 +1,17 @@
 # pattern: Imperative Shell
 # Initialize modern shell tools
 
+# 1Password CLI service-account token (machine-local, never committed).
+# ~/.local/1password_token holds the token on machines provisioned for it.
+# Export only if not already set in the environment.
+if [[ -z "${OP_SERVICE_ACCOUNT_TOKEN:-}" && -r "$HOME/.local/1password_token" ]]; then
+    ZSH_NG_OP_TOKEN="$(< "$HOME/.local/1password_token")"
+    if [[ -n "$ZSH_NG_OP_TOKEN" ]]; then
+        export OP_SERVICE_ACCOUNT_TOKEN="$ZSH_NG_OP_TOKEN"
+    fi
+    unset ZSH_NG_OP_TOKEN
+fi
+
 # Ensure mise-installed tools are discoverable before activation
 export PATH="$HOME/.local/bin:$PATH"
 

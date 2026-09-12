@@ -15,10 +15,10 @@
 # Usage:
 #   ./bootstrap.sh [--op-service] [--no-apply]
 #
-#   --op-service   also merge "[onepassword]" mode="service" prompt=false into
-#                  the local chezmoi config. The OP_SERVICE_ACCOUNT_TOKEN
-#                  itself must come from the environment at run time; it is
-#                  never written to any file.
+#   --op-service   merge "[onepassword]" mode="service" prompt=false into the
+#                  local chezmoi config. This is also added automatically when
+#                  OP_SERVICE_ACCOUNT_TOKEN is already set in the environment.
+#                  The token itself is never written to any file.
 #   --no-apply     stop after cloning and config; do not apply dotfiles.
 #
 # Environment overrides: CHEZMOI_VERSION (pinned default below), BIN_DIR,
@@ -206,9 +206,15 @@ write_config() {
   else
     note "sourceDir already present in $CONFIG_FILE"
   fi
-  if [ "$OP_SERVICE" = true ]; then
+  if [ "$OP_SERVICE" = true ] || [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
     if grep -Eq '^[[:space:]]*\[onepassword\]' "$CONFIG_FILE"; then
-      note "[onepassword] block already present in $CONFIG_FILE"
+      if awk '/^\s*\[onepassword\]/{in_section=1;next} /^\s*\[/{in_section=0} in_section && /mode\s*=\s*"account"/' "$CONFIG_FILE" | grep -q . \
+          && [ -n "${OP_SERVICE_ACCOUNT_TOKEN:-}" ]; then
+        warn "$CONFIG_FILE sets [onepassword] mode=\"account\" while OP_SERVICE_ACCOUNT_TOKEN is set."
+        warn "chezmoi will refuse this combination; change mode to \"service\" or unset the token."
+      else
+        note "[onepassword] block already present in $CONFIG_FILE"
+      fi
     else
       backup_file "$CONFIG_FILE"
       {
@@ -311,7 +317,10 @@ Bootstrap complete. Not yet installed by this script (see AGENTS.md):
 
 Machine-local overrides (never committed): shell additions in ~/.zshrc,
 Polytoken model/telemetry in ~/.config/chezmoi/polytoken.local.yaml,
-Git credentials in ~/.gitconfig-auth. Applying replaces ~/.ssh/authorized_keys
+Git credentials in ~/.gitconfig-auth. Machines using the 1Password service
+token: keep it at ~/.local/1password_token (mode 600); the shared shell
+config exports it as OP_SERVICE_ACCOUNT_TOKEN automatically.
+Applying replaces ~/.ssh/authorized_keys
 with the shared list; any pre-existing copy was backed up under $BACKUP_ROOT/.
 Start a new zsh to pick everything up. Re-running bootstrap is safe.
 EOF
