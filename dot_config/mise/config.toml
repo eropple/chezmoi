@@ -1,6 +1,7 @@
 [tools]
 direnv = "latest"
 fzf = "latest"
+protoc = "latest"
 starship = "latest"
 zellij = "latest"
 zoxide = "latest"
