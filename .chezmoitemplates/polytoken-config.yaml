@@ -10,27 +10,6 @@ providers:
     auth:
       type: codex_device
       profile: codex
-  zai:
-    kind:
-      type: catalog
-      name: zai
-    auth:
-      type: static_key
-      key: ${ZAI_API_KEY}
-  google-ai:
-    kind:
-      type: catalog
-      name: google-ai
-    auth:
-      type: static_key
-      key: ${GEMINI_API_KEY}
-  deepseek:
-    kind:
-      type: catalog
-      name: deepseek
-    auth:
-      type: static_key
-      key: ${DEEPSEEK_API_KEY}
   deepinfra:
     kind:
       type: catalog
@@ -38,27 +17,27 @@ providers:
     auth:
       type: static_key
       key: ${DEEPINFRA_API_KEY}
-  ocgo-c:
+  google-ai:
     kind:
       type: catalog
-      name: ocgo-c
+      name: google-ai
     auth:
       type: static_key
-      key: ${OPENCODE_GO_API_KEY}
-  qwencloud:
+      key: ${GEMINI_API_KEY}
+  zai:
     kind:
       type: catalog
-      name: qwencloud
+      name: zai
     auth:
       type: static_key
-      key: ${QWENCLOUD_API_KEY}
-  mistral:
+      key: ${ZAI_API_KEY}
+  ollama-cloud:
     kind:
       type: catalog
-      name: mistral
+      name: ollama-cloud
     auth:
       type: static_key
-      key: ${MISTRAL_API_KEY}
+      key: ${OLLAMA_API_KEY}
 models:
   codex/gpt-5.5:
     max_tool_batch_size: 6
