@@ -6,3 +6,12 @@
 # A workspace .bazelrc or the command line still overrides this per project.
 # Remote-execution users on current Bazel may also want: --jobs=HOST_CPUS*.5
 build --local_resources=cpu=HOST_CPUS*.5
+
+# Remote cache: BuildBarn on broker (Tailscale, grpc plaintext). Gated to
+# Linux hosts via platform-specific config, so macOS machines sharing this
+# file skip it entirely. Per-workspace user.bazelrc and the command line
+# still override these for experiments.
+common --enable_platform_specific_config
+build:linux --remote_cache=grpc://broker:8980
+build:linux --remote_upload_local_results=true
+build:linux --remote_download_outputs=toplevel
