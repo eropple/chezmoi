@@ -1,6 +1,7 @@
 AGENTS.md
 README.md
-bootstrap.sh
+bootstrap-linux.sh
+bootstrap-mac.sh
 examples
 examples/**
 knowledge-base

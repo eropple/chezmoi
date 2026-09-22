@@ -16,7 +16,7 @@
 # this anywhere except a fresh machine.
 #
 # Usage:
-#   ./bootstrap.sh [--op-service] [--no-apply]
+#   ./bootstrap-linux.sh [--op-service] [--no-apply]
 #
 #   --op-service   merge "[onepassword]" mode="service" prompt=false into the
 #                  local chezmoi config. This is also added automatically when
