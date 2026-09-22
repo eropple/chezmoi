@@ -235,7 +235,9 @@ sync_source() {
       || die "$SOURCE_DIR exists but is not a Git repository; inspect it before proceeding"
     local remote
     remote="$(git -C "$SOURCE_DIR" remote get-url origin)"
-    [ "$remote" = "$REPO_URL" ] \
+    # git@...:eropple/chezmoi and git@...:eropple/chezmoi.git are the same
+    # repository; accept either spelling of the expected remote.
+    [ "${remote%.git}" = "${REPO_URL%.git}" ] \
       || die "unexpected origin '$remote' in $SOURCE_DIR; expected $REPO_URL"
     [ -z "$(git -C "$SOURCE_DIR" status --porcelain)" ] \
       || die "$SOURCE_DIR has uncommitted changes; resolve them before running bootstrap"
