@@ -1,7 +1,7 @@
-version: 3
-defaults:
-  full: zai/glm-5.3(high)
-  mini: codex/gpt-5.6-luna(xhigh)
+version: 4
+modelgroups:
+  polytoken:default_model_full: zai/glm-5.3(high)
+  polytoken:default_model_mini: codex/gpt-5.6-luna(xhigh)
 providers:
   codex:
     kind:
@@ -31,13 +31,13 @@ providers:
     auth:
       type: static_key
       key: ${ZAI_API_KEY}
-  ollama-cloud:
+  xiaomi:
     kind:
       type: catalog
-      name: ollama-cloud
+      name: xiaomi
     auth:
       type: static_key
-      key: ${OLLAMA_API_KEY}
+      key: ${MIMO_API_KEY}
 models:
   codex/gpt-5.5:
     max_tool_batch_size: 6
@@ -68,6 +68,12 @@ integrations:
       kagi:
         enabled: false
         key: ''
+      parallel:
+        enabled: true
+        key: ${PARALLEL_API_KEY}
+      you:
+        enabled: true
+        key: ${YOU_API_KEY}
 tui:
   theme: dark
   theme-file: polytoken://themes/boringcyberpunk.yaml
@@ -82,8 +88,8 @@ tui:
     collapse-threshold: 100
     width: 40
 telemetry:
-  headers:
-    x-honeycomb-team: {{ onepasswordRead "op://Local Dev/Honeycomb/x-honeycomb-team" | quote }}
   protocol: http/protobuf
   endpoint: https://api.honeycomb.io
+  headers:
+    x-honeycomb-team: {{ onepasswordRead "op://Local Dev/Honeycomb/x-honeycomb-team" | quote }}
   service_name: polytoken
