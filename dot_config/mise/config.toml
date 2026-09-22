@@ -1,4 +1,5 @@
 [tools]
+acli = "latest"
 direnv = "latest"
 fzf = "latest"
 protoc = "latest"
