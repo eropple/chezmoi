@@ -43,6 +43,13 @@ providers:
     auth:
       type: static_key
       key: ${MIMO_API_KEY}
+  umans:
+    kind:
+      type: catalog
+      name: umans
+    auth:
+      type: static_key
+      key: ${UMANS_API_KEY
 models:
   codex/gpt-5.5:
     max_tool_batch_size: 6
