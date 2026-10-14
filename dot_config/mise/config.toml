@@ -1,5 +1,6 @@
 [tools]
 acli = "latest"
+chezmoi = "latest"
 direnv = "latest"
 fzf = "latest"
 protoc = "latest"
