@@ -2,7 +2,7 @@ version: 4
 modelgroups:
   polytoken:default_model_full: zai/glm-5.3(high)
   polytoken:default_model_mini: codex/gpt-6-luna-1m(high)
-  polytoken:execute: zai/glm-5.3-flash
+  polytoken:execute_facet: zai/glm-5.3-flash
   polytoken:plan_reviewer:
   - codex/gpt-6-astra-1m(low)
   - codex/gpt-6-sol-1m(medium)
