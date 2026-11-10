@@ -1,7 +1,8 @@
 # Shared Bazel defaults, deposited by chezmoi on every machine.
 # Cap locally executing build actions at half the machine's logical CPU
-# cores, minus one, so that even two concurrent builds always leave at
-# least a couple of cores free for the system itself.
+# cores minus one, capped at 7: two concurrent capped builds take 14
+# cores, leaving at least a couple free on a 16-core machine, while
+# larger machines deliberately share the same ceiling.
 #
 # Bazel's --local_resources value grammar takes HOST_CPUS with at most one
 # operator ("*<float>" or "-<float>"), so "half minus one" cannot be written
@@ -9,14 +10,15 @@
 # removed in Bazel 9 anyway). This template therefore computes the number at
 # apply time: getconf(1) reports online logical CPUs on both Linux and macOS
 # (GNU nproc is absent from stock macOS). Integer division by 2, minus one,
-# clamped at 1 so machines with fewer than four cores still schedule local
-# work. The value adapts per machine at each chezmoi apply; re-apply after a
-# machine's CPU count changes.
+# clamped into the range [1, 7]: the floor keeps machines with fewer than
+# four cores scheduling local work, the ceiling keeps bigger machines from
+# taking more than 7. The value adapts per machine at each chezmoi apply;
+# re-apply after a machine's CPU count changes.
 #
 # A workspace .bazelrc or the command line still overrides this per project.
 # Remote-execution users on current Bazel may also want: --jobs=HOST_CPUS*.5
 {{- $cores := int (trim (output "getconf" "_NPROCESSORS_ONLN")) }}
-build --local_resources=cpu={{ max 1 (sub (div $cores 2) 1) }}
+build --local_resources=cpu={{ min 7 (max 1 (sub (div $cores 2) 1)) }}
 
 # Remote cache: BuildBarn on broker (Tailscale, grpc plaintext). Gated to
 # Linux hosts via platform-specific config, so macOS machines sharing this
